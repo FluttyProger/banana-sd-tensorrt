@@ -39,8 +39,6 @@ RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/
 RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan https://storage.cloud.google.com/fortensorrt/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan?_ga=2.104311488.-1528025844.1678632164
 
 
-RUN wget -O 
-
 ADD download.py .
 RUN python3 download.py
 
