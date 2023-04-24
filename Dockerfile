@@ -24,7 +24,7 @@ ARG MODEL_NAME
 ENV MODEL_NAME=stabilityai/stable-diffusion-2-1
 
 ARG MODEL_REV
-ENV MODEL_REV=main
+ENV MODEL_REV=fp16
 
 ADD app.py .
 
