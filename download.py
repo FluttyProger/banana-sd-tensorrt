@@ -15,7 +15,7 @@ def download_model():
     scheduler = DDIMScheduler.from_pretrained(model_name, subfolder="scheduler")
     
     model = StableDiffusionPipeline.from_pretrained(model_name,
-                                                    custom_pipeline="stable_diffusion_tensorrt_txt2img_mine",
+                                                    custom_pipeline="stable_diffusion_tensorrt_txt2img_nobuild",
                                                     revision=model_rev,
                                                     torch_dtype=torch.float16,
                                                     scheduler=scheduler)
