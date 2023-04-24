@@ -1,28 +1,41 @@
-# Must use a Cuda version 11+
-FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime
+FROM runpod/pytorch:3.10-2.0.0-117
 
 WORKDIR /
 
-# Install git
-RUN apt-get update && apt-get install -y git ffmpeg libsm6 libxext6
+RUN apt-get update && apt-get install -y git wget
 
-# Install python packages
 RUN pip3 install --upgrade pip
 ADD requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-# Install Opencv and controlnet-aux
-RUN pip install -q opencv-contrib-python
-RUN pip install -q controlnet_aux
+RUN python3 -m pip install --upgrade tensorrt
+RUN python3 -m pip install --upgrade polygraphy onnx-graphsurgeon --extra-index-url https://pypi.ngc.nvidia.com
+RUN python3 -m pip install onnxruntime
 
-# Add your model weight files 
-# (in this case we have a python script)
+ADD server.py .
+
+RUN git clone https://github.com/FluttyProger/diffusers
+
+WORKDIR /diffusers
+
+RUN pip install .
+
+WORKDIR /
+
+ARG MODEL_NAME
+ENV MODEL_NAME=SdValar/liberty
+
+ARG MODEL_REV
+ENV MODEL_REV=main
+
+ADD app.py .
+
+RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/_constants.py https://raw.githubusercontent.com/pytorch/pytorch/d06d195bcd960f530f8f0d5a1992ed68d2823d4e/torch/onnx/_constants.py
+
+RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/symbolic_opset14.py https://raw.githubusercontent.com/pytorch/pytorch/d06d195bcd960f530f8f0d5a1992ed68d2823d4e/torch/onnx/symbolic_opset14.py
+
 ADD download.py .
 RUN python3 download.py
-
-
-# Add your custom app code, init() and inference()
-ADD app.py .
 
 EXPOSE 8000
 
