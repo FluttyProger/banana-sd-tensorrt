@@ -12,8 +12,6 @@ RUN python3 -m pip install --upgrade tensorrt
 RUN python3 -m pip install --upgrade polygraphy onnx-graphsurgeon --extra-index-url https://pypi.ngc.nvidia.com
 RUN python3 -m pip install onnxruntime
 
-ADD server.py .
-
 RUN git clone https://github.com/FluttyProger/diffusers
 
 WORKDIR /diffusers
