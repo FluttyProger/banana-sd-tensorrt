@@ -32,15 +32,15 @@ RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/_constants.py htt
 
 RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/symbolic_opset14.py https://raw.githubusercontent.com/pytorch/pytorch/d06d195bcd960f530f8f0d5a1992ed68d2823d4e/torch/onnx/symbolic_opset14.py
 
+ADD download.py .
+RUN python3 download.py
+
 RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/vae.plan https://storage.cloud.google.com/fortensorrt/f7f33030acc57428be85fbec092c37a78231d75a/engine/vae.plan?_ga=2.129270092.-1528025844.1678632164
 
 RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/unet.plan https://storage.cloud.google.com/fortensorrt/f7f33030acc57428be85fbec092c37a78231d75a/engine/unet.plan?_ga=2.104311488.-1528025844.1678632164
 
 RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan https://storage.cloud.google.com/fortensorrt/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan?_ga=2.104311488.-1528025844.1678632164
 
-
-ADD download.py .
-RUN python3 download.py
 
 EXPOSE 8000
 
