@@ -22,8 +22,6 @@ def download_model():
     
     # re-use cached folder to save ONNX models and TensorRT Engines
     model.set_cached_folder(model_name, revision=model_rev)
-    
-    model = model.to("cuda")
 
 
 if __name__ == "__main__":
