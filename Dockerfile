@@ -35,11 +35,11 @@ RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/symbolic_opset14.
 ADD download.py .
 RUN python3 download.py
 
-RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/vae.plan https://storage.cloud.google.com/fortensorrt/f7f33030acc57428be85fbec092c37a78231d75a/engine/vae.plan?_ga=2.129270092.-1528025844.1678632164
+RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/vae.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/vae.plan
 
-RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/unet.plan https://storage.cloud.google.com/fortensorrt/f7f33030acc57428be85fbec092c37a78231d75a/engine/unet.plan?_ga=2.104311488.-1528025844.1678632164
+RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/unet.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/unet.plan
 
-RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan https://storage.cloud.google.com/fortensorrt/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan?_ga=2.104311488.-1528025844.1678632164
+RUN wget /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/clip.plan
 
 
 EXPOSE 8000
