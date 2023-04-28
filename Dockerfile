@@ -20,6 +20,18 @@ RUN wget -O /deliberate-model/engine/unet.plan https://huggingface.co/FluttyProg
 
 RUN wget -O /deliberate-model/engine/clip.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/clip.plan
 
+ADD txt2img_pipeline.py .
+
+ADD stable_diffusion_pipeline.py .
+
+ADD utilities.py .
+
+RUN yes | /bin/cp -rf txt2img_pipeline.py /TensorRT/demo/Diffusion
+
+RUN yes | /bin/cp -rf stable_diffusion_pipeline.py /TensorRT/demo/Diffusion
+
+RUN yes | /bin/cp -rf utilities.py /TensorRT/demo/Diffusion
+
 EXPOSE 8000
 
 CMD python3 -u /TensorRT/demo/Diffusion/app.py
