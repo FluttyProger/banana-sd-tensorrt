@@ -35,7 +35,7 @@ RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/symbolic_opset14.
 ADD download.py .
 RUN python3 download.py
 
-RUN mkdir /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine
+RUN mkdir /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/5760fbc712b0a637025b62ed60862feeecae2a58/engine
 
 RUN wget -O /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/5760fbc712b0a637025b62ed60862feeecae2a58/engine/vae.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/vae.plan
 
