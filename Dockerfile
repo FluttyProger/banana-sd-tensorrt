@@ -10,7 +10,7 @@ RUN pip3 install -r requirements.txt
 
 RUN git clone https://github.com/NVIDIA/TensorRT -b release/8.6
 
-ADD app.py .
+ADD app.py /TensorRT/demo/Diffusion
 
 RUN mkdir -p /deliberate-model/engine
 
@@ -22,4 +22,4 @@ RUN wget -O /deliberate-model/engine/clip.plan https://huggingface.co/FluttyProg
 
 EXPOSE 8000
 
-CMD python3 -u app.py
+CMD python3 -u /TensorRT/demo/Diffusion/app.py
