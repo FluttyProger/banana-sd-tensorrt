@@ -1,46 +1,31 @@
 import os
-import torch
-from torch import autocast
 import base64
 from io import BytesIO
-from transformers import pipeline
-from diffusers import DDIMScheduler
-from diffusers.pipelines.stable_diffusion import StableDiffusionPipeline
 from potassium import Potassium, Request, Response
-
+import tensorrt as trt
+from utilities import TRT_LOGGER, add_arguments
+from txt2img_pipeline import Txt2ImgPipeline
 
 app = Potassium("my_app")
 
 
 @app.init
 def init():
-    model_name = os.getenv("MODEL_NAME")
-    model_rev = os.getenv("MODEL_REV")
-    scheduler = DDIMScheduler.from_pretrained(model_name, subfolder="scheduler")
-    
-    model = StableDiffusionPipeline.from_pretrained(model_name,
-                                                    custom_pipeline="stable_diffusion_tensorrt_txt2img_nobuild",
-                                                    revision=model_rev,
-                                                    torch_dtype=torch.float16,
-                                                    scheduler=scheduler)
-    
-    # re-use cached folder to save ONNX models and TensorRT Engines
-    model.set_cached_folder(model_name, revision=model_rev)
-    
-    model = model.to("cuda")
-    model.enable_xformers_memory_efficient_attention()
-    context = {
-        "model": model
-    }
-    
-    return context
+    trt.init_libnvinfer_plugins(TRT_LOGGER, '')
+    demo = Txt2ImgPipeline(
+        scheduler="DPM",
+        output_dir="",
+        version="1.5",
+        hf_token="",
+        max_batch_size=4)
+    demo.loadEngines("/deliberate-model/engine")
+    return demo
 
 
 @app.handler()
-def handler(context: dict, request: Request) -> Response:
+def handler(context, request: Request) -> Response:
     model_inputs = request.json
-    model = context.get("model")
-    outputs = inference(model, model_inputs)
+    outputs = inference(context, model_inputs)
     
     return Response(json={"outputs": outputs}, status=200)
 
@@ -54,20 +39,21 @@ def inference(model, model_inputs: dict) -> dict:
     height = model_inputs.get('height', 768)
     negative = model_inputs.get('negative_prompt', None)
     width = model_inputs.get('width', 768)
-    steps = model_inputs.get('steps', 20)
-    guidance_scale = model_inputs.get('guidance_scale', 9)
-    seed = model_inputs.get('seed', None)
+    steps = model_inputs.get('steps', 36)
+    guidance_scale = model_inputs.get('guidance_scale', 7)
+    seed = model_inputs.get('seed', -1)
 
     if not prompt: return {'message': 'No prompt was provided'}
-    
-    generator = None
-    if seed: generator = torch.Generator("cuda").manual_seed(seed)
-    
-    with autocast("cuda"):
-        image = model(prompt, negative_prompt=negative, guidance_scale=guidance_scale, height=height, width=width, num_inference_steps=steps, generator=generator)
+
+
+    # Load TensorRT engines and pytorch modules
+    model.loadResources(image_height, image_width, batch_size, seed, steps, guidance_scale)
+
+
+    images = model.infer([prompt], negative_prompt=[negative], image_height=height, image_width=width, seed=seed)
     
     buffered = BytesIO()
-    image.images[0].save(buffered, format="JPEG")
+    images[0].save(buffered, format="JPEG")
     image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
     return {'image_base64': image_base64}
 
