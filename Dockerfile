@@ -1,4 +1,4 @@
-FROM runpod/pytorch:3.10-2.0.0-117
+FROM nvcr.io/nvidia/pytorch:23.02-py3
 
 WORKDIR /
 
@@ -8,41 +8,17 @@ RUN pip3 install --upgrade pip
 ADD requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-RUN python3 -m pip install --upgrade tensorrt
-RUN python3 -m pip install --upgrade polygraphy onnx-graphsurgeon --extra-index-url https://pypi.ngc.nvidia.com
-RUN python3 -m pip install onnxruntime
-
-RUN git clone https://github.com/FluttyProger/diffusers
-
-WORKDIR /diffusers
-
-RUN pip install .
-
-WORKDIR /
-
-ARG MODEL_NAME
-ENV MODEL_NAME=XpucT/Deliberate
-
-ARG MODEL_REV
-ENV MODEL_REV=main
+RUN git clone https://github.com/NVIDIA/TensorRT -b release/8.6
 
 ADD app.py .
 
-RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/_constants.py https://raw.githubusercontent.com/pytorch/pytorch/d06d195bcd960f530f8f0d5a1992ed68d2823d4e/torch/onnx/_constants.py
+RUN mkdir -p /deliberate-model/engine
 
-RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/symbolic_opset14.py https://raw.githubusercontent.com/pytorch/pytorch/d06d195bcd960f530f8f0d5a1992ed68d2823d4e/torch/onnx/symbolic_opset14.py
+RUN wget -O /deliberate-model/engine/vae.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/vae.plan
 
-ADD download.py .
-RUN python3 download.py
+RUN wget -O /deliberate-model/engine/unet.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/unet.plan
 
-RUN mkdir /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/5760fbc712b0a637025b62ed60862feeecae2a58/engine
-
-RUN wget -O /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/5760fbc712b0a637025b62ed60862feeecae2a58/engine/vae.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/vae.plan
-
-RUN wget -O /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/5760fbc712b0a637025b62ed60862feeecae2a58/engine/unet.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/unet.plan
-
-RUN wget -O /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/5760fbc712b0a637025b62ed60862feeecae2a58/engine/clip.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/clip.plan
-
+RUN wget -O /deliberate-model/engine/clip.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/clip.plan
 
 EXPOSE 8000
 
