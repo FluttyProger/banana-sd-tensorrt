@@ -3,8 +3,8 @@ import base64
 from io import BytesIO
 from potassium import Potassium, Request, Response
 import tensorrt as trt
-from utilities import TRT_LOGGER, add_arguments
-from txt2img_pipeline import Txt2ImgPipeline
+from TensorRT.demo.Diffusion.utilities import TRT_LOGGER, add_arguments
+from TensorRT.demo.Diffusion.txt2img_pipeline import Txt2ImgPipeline
 
 app = Potassium("my_app")
 
