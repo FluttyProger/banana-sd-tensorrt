@@ -21,10 +21,10 @@ RUN pip install .
 WORKDIR /
 
 ARG MODEL_NAME
-ENV MODEL_NAME=stabilityai/stable-diffusion-2-1
+ENV MODEL_NAME=XpucT/Deliberate
 
 ARG MODEL_REV
-ENV MODEL_REV=fp16
+ENV MODEL_REV=main
 
 ADD app.py .
 
@@ -35,13 +35,13 @@ RUN wget -O /usr/local/lib/python3.10/dist-packages/torch/onnx/symbolic_opset14.
 ADD download.py .
 RUN python3 download.py
 
-RUN mkdir /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine
+#RUN mkdir /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine
 
-RUN wget -O /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/vae.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/vae.plan
+#RUN wget -O /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/vae.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/vae.plan
 
-RUN wget -O /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/unet.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/unet.plan
+#RUN wget -O /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/unet.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/unet.plan
 
-RUN wget -O /root/.cache/huggingface/hub/models--stabilityai--stable-diffusion-2-1/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/clip.plan
+#RUN wget -O /root/.cache/huggingface/hub/models--XpucT--Deliberate/snapshots/f7f33030acc57428be85fbec092c37a78231d75a/engine/clip.plan https://huggingface.co/FluttyProger/stable-diffusion-2-1-tensorrt/resolve/main/clip.plan
 
 
 EXPOSE 8000
