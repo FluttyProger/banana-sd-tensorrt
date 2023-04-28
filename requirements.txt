@@ -1,4 +1,16 @@
-transformers==4.27.1
-xformers==0.0.16
-accelerate
 potassium
+accelerate
+colored
+cuda-python
+diffusers
+ftfy
+matplotlib
+nvtx
+onnx
+onnxruntime
+--extra-index-url https://pypi.ngc.nvidia.com
+onnx-graphsurgeon
+polygraphy
+scipy
+torch
+transformers
