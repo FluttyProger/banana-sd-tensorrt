@@ -3,8 +3,8 @@ import base64
 from io import BytesIO
 from potassium import Potassium, Request, Response
 import tensorrt as trt
-from TensorRT.demo.Diffusion.utilities import TRT_LOGGER, add_arguments
-from TensorRT.demo.Diffusion.txt2img_pipeline import Txt2ImgPipeline
+from utilities import TRT_LOGGER, add_arguments
+from txt2img_pipeline import Txt2ImgPipeline
 
 app = Potassium("my_app")
 
@@ -46,7 +46,7 @@ def inference(model, model_inputs: dict) -> dict:
 
 
     # Load TensorRT engines and pytorch modules
-    model.loadResources(image_height, image_width, batch_size, seed, steps, guidance_scale)
+    model.loadResources(height, width, 1, seed, steps, guidance_scale)
 
 
     images = model.infer([prompt], negative_prompt=[negative], image_height=height, image_width=width, seed=seed)
