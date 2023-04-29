@@ -30,6 +30,8 @@ ADD stable_diffusion_pipeline.py .
 
 ADD utilities.py .
 
+ADD models.py .
+
 RUN yes | /bin/cp -rf txt2img_pipeline.py /TensorRT/demo/Diffusion
 
 RUN yes | /bin/cp -rf stable_diffusion_pipeline.py /TensorRT/demo/Diffusion
