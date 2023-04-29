@@ -341,7 +341,11 @@ class StableDiffusionPipeline:
         # cudart.cudaEventRecord(self.events['vae-start'], 0)
         images = self.runEngine('vae', {"latent": device_view(latents)})['images']
         # cudart.cudaEventRecord(self.events['vae-stop'], 0)
-        return images
+        images = ((images + 1) * 255 / 2).clamp(0, 255).detach().permute(0, 2, 3, 1).round().type(torch.uint8).cpu().numpy()
+        imgs = list()
+        for i in range(images.shape[0]):
+            imgs.append(Image.fromarray(images[i]))
+        return imgs
 
     # def print_summary(self, denoising_steps, tic, toc, vae_enc=False):
     #         print('|------------|--------------|')
