@@ -34,6 +34,8 @@ RUN yes | /bin/cp -rf stable_diffusion_pipeline.py /TensorRT/demo/Diffusion
 
 RUN yes | /bin/cp -rf utilities.py /TensorRT/demo/Diffusion
 
+RUN yes | /bin/cp -rf models.py /TensorRT/demo/Diffusion
+
 EXPOSE 8000
 
 RUN ln -P /TensorRT/demo/Diffusion/app.py app.py
