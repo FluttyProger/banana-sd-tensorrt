@@ -8,6 +8,8 @@ from txt2img_pipeline import Txt2ImgPipeline
 
 app = Potassium("my_app")
 
+os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
+
 @app.init
 def init():
     trt.init_libnvinfer_plugins(TRT_LOGGER, '')
