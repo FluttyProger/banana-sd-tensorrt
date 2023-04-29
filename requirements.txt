@@ -13,4 +13,5 @@ onnx-graphsurgeon
 polygraphy
 scipy
 torch
+tensorrt
 transformers
