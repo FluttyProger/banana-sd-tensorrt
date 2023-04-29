@@ -14,6 +14,8 @@ RUN git clone https://github.com/NVIDIA/TensorRT -b release/8.6
 
 ADD app.py /TensorRT/demo/Diffusion
 
+RUN ["ln", "-P", "/TensorRT/demo/Diffusion/app.py", "app.py"]
+
 RUN mkdir -p /deliberate-model/engine
 
 RUN wget -O /deliberate-model/engine/vae.plan https://huggingface.co/FluttyProger/Deliberate-onnx/resolve/main/engine/vae.plan
@@ -37,8 +39,6 @@ RUN yes | /bin/cp -rf utilities.py /TensorRT/demo/Diffusion
 RUN yes | /bin/cp -rf models.py /TensorRT/demo/Diffusion
 
 EXPOSE 8000
-
-RUN ln -P /TensorRT/demo/Diffusion/app.py app.py
 
 ENV CUDA_MODULE_LOADING=LAZY
 
