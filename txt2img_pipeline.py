@@ -17,6 +17,7 @@
 
 import numpy as np
 import nvtx
+import time
 import torch
 import tensorrt as trt
 from utilities import TRT_LOGGER
@@ -28,7 +29,7 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
     """
     def __init__(
         self,
-        scheduler="DDIM",
+        scheduler="DPM",
         *args, **kwargs
     ):
         """
@@ -38,7 +39,8 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
             scheduler (str):
                 The scheduler to guide the denoising process. Must be one of the [DPM, LMSD, DDIM, EulerA, PNDM].
         """
-        super(Txt2ImgPipeline, self).__init__(*args, **kwargs, scheduler=scheduler, stages=['clip','unet','vae'])
+        super(Txt2ImgPipeline, self).__init__(*args, **kwargs, \
+            scheduler=scheduler, stages=['clip','unet','vae'])
 
     def infer(
         self,
@@ -73,7 +75,15 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
 
         with torch.inference_mode(), torch.autocast("cuda"), trt.Runtime(TRT_LOGGER):
             # Pre-initialize latents
-            latents = self.initialize_latents(batch_size=len(prompt), unet_channels=4, latent_height=(image_height // 8), latent_width=(image_width // 8))
+            latents = self.initialize_latents( \
+                batch_size=len(prompt), \
+                unet_channels=4, \
+                latent_height=(image_height // 8), \
+                latent_width=(image_width // 8)
+            )
+
+            torch.cuda.synchronize()
+            e2e_tic = time.perf_counter()
 
             # CLIP text encoder
             text_embeddings = self.encode_prompt(prompt, negative_prompt)
@@ -84,4 +94,11 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
             # VAE decode latent
             images = self.decode_latent(latents)
 
-            return images
+            torch.cuda.synchronize()
+            e2e_toc = time.perf_counter()
+
+            images = ((images + 1) * 255 / 2).clamp(0, 255).detach().permute(0, 2, 3, 1).round().type(torch.uint8).cpu().numpy()
+            imgs = list()
+            for i in range(images.shape[0]):
+                imgs.append(Image.fromarray(images[i]))
+            return imgs
