@@ -38,4 +38,4 @@ EXPOSE 8000
 
 RUN ln -P /TensorRT/demo/Diffusion/app.py app.py
 
-CMD python3 -u app.py
+CMD CUDA_MODULE_LOADING=LAZY python3 -u app.py
