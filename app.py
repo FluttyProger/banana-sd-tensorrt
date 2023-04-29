@@ -8,7 +8,6 @@ from TensorRT.demo.Diffusion.txt2img_pipeline import Txt2ImgPipeline
 
 app = Potassium("my_app")
 
-
 @app.init
 def init():
     trt.init_libnvinfer_plugins(TRT_LOGGER, '')
