@@ -16,6 +16,7 @@
 #
 
 from cuda import cudart
+from PIL import Image
 import gc
 from models import make_CLIP, make_tokenizer, make_UNet, make_VAE, make_VAEEncoder
 import numpy as np
