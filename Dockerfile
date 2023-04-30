@@ -28,13 +28,13 @@ ADD utilities.py .
 
 ADD models.py .
 
-ADD special_tokens_map.json /files/tokenizer
+ADD special_tokens_map.json /files/tokenizer/
 
-ADD vocab.json /files/tokenizer
+ADD vocab.json /files/tokenizer/
 
-ADD tokenizer_config.json /files/tokenizer
+ADD tokenizer_config.json /files/tokenizer/
 
-ADD merges.txt /files/tokenizer
+ADD merges.txt /files/tokenizer/
 
 EXPOSE 8000
 
