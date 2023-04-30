@@ -20,13 +20,17 @@ def init():
         hf_token="",
         max_batch_size=4)
     demo.loadEngines("/deliberate-model/engine")
-    return demo
+    context = {
+        "model": demo
+    }
+    return context
 
 
 @app.handler()
 def handler(context, request: Request) -> Response:
+    model = context.get("model")
     model_inputs = request.json
-    outputs = inference(context, model_inputs)
+    outputs = inference(model, model_inputs)
     
     return Response(json={"outputs": outputs}, status=200)
 
