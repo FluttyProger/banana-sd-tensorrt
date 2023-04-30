@@ -19,6 +19,7 @@ import numpy as np
 import nvtx
 import time
 import torch
+from PIL import Image
 import tensorrt as trt
 from utilities import TRT_LOGGER
 from stable_diffusion_pipeline import StableDiffusionPipeline
