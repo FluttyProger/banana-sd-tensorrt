@@ -443,6 +443,6 @@ def make_VAEEncoder(version, hf_token, device, verbose, max_batch_size, inpaint=
             max_batch_size=max_batch_size, embedding_dim=get_embedding_dim(version))
 
 def make_tokenizer(version, hf_token):
-    return CLIPTokenizer.from_pretrained(get_path(version),
+    return CLIPTokenizer.from_pretrained("/files",
             subfolder="tokenizer",
             use_auth_token=hf_token)
