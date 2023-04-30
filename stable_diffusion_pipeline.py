@@ -137,7 +137,6 @@ class StableDiffusionPipeline:
 
         # Pre-compute latent input scales and linear multistep coefficients
         self.scheduler.set_timesteps(self.denoising_steps)
-        self.scheduler.configure()
 
         # Create CUDA events and stream
         self.events = {}
