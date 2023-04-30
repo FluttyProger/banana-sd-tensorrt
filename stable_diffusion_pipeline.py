@@ -94,7 +94,7 @@ class StableDiffusionPipeline:
         self.device = device
         self.verbose = verbose
         self.nvtx_profile = nvtx_profile
-
+        self.max_batch_size = max_batch_size
         self.version = version
 
         # Schedule options
@@ -131,8 +131,7 @@ class StableDiffusionPipeline:
         self.denoising_steps = denoising_step
         assert guidance_scal > 1.0
         self.guidance_scale = guidance_scal
-
-        self.max_batch_size = max_batch_size
+        
         # Initialize noise generator
         self.generator = torch.Generator(device="cuda").manual_seed(seed) if seed else None
 
