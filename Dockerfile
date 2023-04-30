@@ -14,7 +14,7 @@ RUN git clone https://github.com/NVIDIA/TensorRT -b release/8.6
 
 ADD app.py /TensorRT/demo/Diffusion
 
-RUN ["ln", "-P", "/TensorRT/demo/Diffusion/app.py", "app.py"]
+RUN ["ln", "-rs", "/TensorRT/demo/Diffusion/app.py", "app.py"]
 
 RUN mkdir -p /deliberate-model/engine
 
