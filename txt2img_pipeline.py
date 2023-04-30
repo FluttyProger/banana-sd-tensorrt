@@ -16,13 +16,15 @@
 #
 
 import numpy as np
-import nvtx
+import os
 import time
 import torch
 from PIL import Image
 import tensorrt as trt
 from utilities import TRT_LOGGER
 from stable_diffusion_pipeline import StableDiffusionPipeline
+
+os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 
 class Txt2ImgPipeline(StableDiffusionPipeline):
     """

@@ -14,17 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+import diffusers
 from cuda import cudart
 from PIL import Image
 import gc
+from lpw import LongPromptWeightingPipeline
 from models import make_CLIP, make_tokenizer, make_UNet, make_VAE, make_VAEEncoder
 import numpy as np
-import nvtx
 import os
 import onnx
 from polygraphy import cuda
 import torch
+
+from text_encoder import TensorRTCLIPTextModel
 from utilities import Engine, device_view, save_image
 from utilities import DPMScheduler, DDIMScheduler, EulerAncestralDiscreteScheduler, LMSDiscreteScheduler, PNDMScheduler
 
@@ -39,7 +41,7 @@ class StableDiffusionPipeline:
         stages=['clip','unet','vae'],
         max_batch_size=4,
         denoising_steps=50,
-        scheduler="DPM",
+        scheduler="dpm++",
         guidance_scale=7.5,
         device='cuda',
         output_dir='.',
@@ -104,19 +106,20 @@ class StableDiffusionPipeline:
         else:
             sched_opts['prediction_type'] = 'epsilon'
 
-        if scheduler == "DDIM":
-            self.scheduler = DDIMScheduler(device=self.device, **sched_opts)
-        elif scheduler == "DPM":
-            self.scheduler = DPMScheduler(device=self.device, **sched_opts)
-        elif scheduler == "EulerA":
-            self.scheduler = EulerAncestralDiscreteScheduler(device=self.device, **sched_opts)
-        elif scheduler == "LMSD":
-            self.scheduler = LMSDiscreteScheduler(device=self.device, **sched_opts)
-        elif scheduler == "PNDM":
-            sched_opts["steps_offset"] = 1
-            self.scheduler = PNDMScheduler(device=self.device, **sched_opts)
-        else:
-            raise ValueError(f"Scheduler should be either DDIM, DPM, EulerA, LMSD or PNDM")
+        SCHEDULERS = {
+            "ddim": diffusers.DDIMScheduler,
+            "deis": diffusers.DEISMultistepScheduler,
+            "dpm2": diffusers.KDPM2DiscreteScheduler,
+            "dpm2-a": diffusers.KDPM2AncestralDiscreteScheduler,
+            "euler_a": diffusers.EulerAncestralDiscreteScheduler,
+            "euler": diffusers.EulerDiscreteScheduler,
+            "heun": diffusers.DPMSolverMultistepScheduler,
+            "dpm++": diffusers.DPMSolverMultistepScheduler,
+            "dpm": diffusers.DPMSolverMultistepScheduler,
+            "pndm": diffusers.PNDMScheduler,
+        }
+
+        self.scheduler = SCHEDULERS[scheduler].from_pretrained("/files", subfolder="scheduler")
 
         self.stages = stages
         self.inpaint = inpaint
@@ -261,52 +264,31 @@ class StableDiffusionPipeline:
         return timesteps, t_start
 
     def preprocess_images(self, batch_size, images=()):
-        if self.nvtx_profile:
-            nvtx_image_preprocess = nvtx.start_range(message='image_preprocess', color='pink')
         init_images=[]
         for image in images:
             image = image.to(self.device).float()
             image = image.repeat(batch_size, 1, 1, 1)
             init_images .append(image)
-        if self.nvtx_profile:
-            nvtx.end_range(nvtx_image_preprocess)
         return tuple(init_images)
 
     def encode_prompt(self, prompt, negative_prompt):
-        if self.nvtx_profile:
-            nvtx_clip = nvtx.start_range(message='clip', color='green')
         cudart.cudaEventRecord(self.events['clip-start'], 0)
 
-        # Tokenize prompt
-        text_input_ids = self.tokenizer(
-            prompt,
-            padding="max_length",
-            max_length=self.tokenizer.model_max_length,
-            truncation=True,
-            return_tensors="pt",
-        ).input_ids.type(torch.int32).to(self.device)
+        self.text_encoder = TensorRTCLIPTextModel(
+            self.engine["clip"], self.stream
+        )
+        self.lpw = LongPromptWeightingPipeline(
+            self.text_encoder, self.tokenizer, self.device
+        )
 
-        text_input_ids_inp = device_view(text_input_ids)
-        # NOTE: output tensor for CLIP must be cloned because it will be overwritten when called again for negative prompt
-        text_embeddings = self.runEngine('clip', {"input_ids": text_input_ids_inp})['text_embeddings'].clone()
-
-        # Tokenize negative prompt
-        uncond_input_ids = self.tokenizer(
-            negative_prompt,
-            padding="max_length",
-            max_length=self.tokenizer.model_max_length,
-            truncation=True,
-            return_tensors="pt",
-        ).input_ids.type(torch.int32).to(self.device)
-        uncond_input_ids_inp = device_view(uncond_input_ids)
-        uncond_embeddings = self.runEngine('clip', {"input_ids": uncond_input_ids_inp})['text_embeddings']
-
-        # Concatenate the unconditional and text embeddings into a single batch to avoid doing two forward passes for classifier free guidance
-        text_embeddings = torch.cat([uncond_embeddings, text_embeddings]).to(dtype=torch.float16)
+        text_embeddings = self.lpw(
+                prompt,
+                negative_prompt,
+                1,
+                max_embeddings_multiples=1,
+            ).to(dtype=torch.float16)
 
         cudart.cudaEventRecord(self.events['clip-stop'], 0)
-        if self.nvtx_profile:
-            nvtx.end_range(nvtx_clip)
 
         return text_embeddings
 
@@ -315,20 +297,14 @@ class StableDiffusionPipeline:
         if not isinstance(timesteps, torch.Tensor):
             timesteps = self.scheduler.timesteps
         for step_index, timestep in enumerate(timesteps):
-            if self.nvtx_profile:
-                nvtx_latent_scale = nvtx.start_range(message='latent_scale', color='pink')
 
             # Expand the latents if we are doing classifier free guidance
             latent_model_input = torch.cat([latents] * 2)
             latent_model_input = self.scheduler.scale_model_input(latent_model_input, step_offset + step_index, timestep)
             if isinstance(mask, torch.Tensor):
                 latent_model_input = torch.cat([latent_model_input, mask, masked_image_latents], dim=1)
-            if self.nvtx_profile:
-                nvtx.end_range(nvtx_latent_scale)
 
             # Predict the noise residual
-            if self.nvtx_profile:
-                nvtx_unet = nvtx.start_range(message='unet', color='blue')
 
             embeddings_dtype = np.float16
             timestep_float = timestep.float() if timestep.dtype != torch.float32 else timestep
@@ -337,11 +313,6 @@ class StableDiffusionPipeline:
             timestep_inp = device_view(timestep_float)
             embeddings_inp = device_view(text_embeddings)
             noise_pred = self.runEngine('unet', {"sample": sample_inp, "timestep": timestep_inp, "encoder_hidden_states": embeddings_inp})['latent']
-            if self.nvtx_profile:
-                nvtx.end_range(nvtx_unet)
-
-            if self.nvtx_profile:
-                nvtx_latent_step = nvtx.start_range(message='latent_step', color='pink')
 
             # Perform guidance
             noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
@@ -349,33 +320,23 @@ class StableDiffusionPipeline:
 
             latents = self.scheduler.step(noise_pred, latents, step_offset + step_index, timestep)
 
-            if self.nvtx_profile:
-                nvtx.end_range(nvtx_latent_step)
 
         latents = 1. / 0.18215 * latents
         cudart.cudaEventRecord(self.events['denoise-stop'], 0)
         return latents
 
     def encode_image(self, init_image):
-        if self.nvtx_profile:
-            nvtx_vae = nvtx.start_range(message='vae_encoder', color='red')
         cudart.cudaEventRecord(self.events['vae_encoder-start'], 0)
         init_latents = self.runEngine('vae_encoder', {"images": device_view(init_image)})['latent']
         cudart.cudaEventRecord(self.events['vae_encoder-stop'], 0)
-        if self.nvtx_profile:
-            nvtx.end_range(nvtx_vae)
 
         init_latents = 0.18215 * init_latents
         return init_latents
 
     def decode_latent(self, latents):
-        if self.nvtx_profile:
-            nvtx_vae = nvtx.start_range(message='vae', color='red')
         cudart.cudaEventRecord(self.events['vae-start'], 0)
         images = self.runEngine('vae', {"latent": device_view(latents)})['images']
         cudart.cudaEventRecord(self.events['vae-stop'], 0)
-        if self.nvtx_profile:
-            nvtx.end_range(nvtx_vae)
         return images
 
     def print_summary(self, denoising_steps, tic, toc, vae_enc=False):

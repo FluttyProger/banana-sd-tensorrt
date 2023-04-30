@@ -28,6 +28,10 @@ ADD utilities.py .
 
 ADD models.py .
 
+ADD text_encoder.py .
+
+ADD lpw.py .
+
 ADD special_tokens_map.json /files/tokenizer/
 
 ADD vocab.json /files/tokenizer/
@@ -35,6 +39,8 @@ ADD vocab.json /files/tokenizer/
 ADD tokenizer_config.json /files/tokenizer/
 
 ADD merges.txt /files/tokenizer/
+
+ADD scheduler_config.json /files/scheduler/
 
 EXPOSE 8000
 

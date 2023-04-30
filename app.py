@@ -14,7 +14,7 @@ os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 def init():
     trt.init_libnvinfer_plugins(TRT_LOGGER, '')
     demo = Txt2ImgPipeline(
-        scheduler="DPM",
+        scheduler="dpm++",
         output_dir="",
         version="1.5",
         hf_token="",
