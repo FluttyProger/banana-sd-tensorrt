@@ -445,4 +445,4 @@ def make_VAEEncoder(version, hf_token, device, verbose, max_batch_size, inpaint=
 def make_tokenizer(version, hf_token):
     return CLIPTokenizer.from_pretrained("/files",
             subfolder="tokenizer",
-            use_auth_token=hf_token)
+            use_auth_token=hf_token, local_files_only=True)
