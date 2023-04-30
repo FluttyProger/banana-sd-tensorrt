@@ -10,11 +10,7 @@ RUN pip3 install -r requirements.txt
 
 RUN python3 -m pip install --upgrade tensorrt
 
-RUN git clone https://github.com/NVIDIA/TensorRT -b release/8.6
-
-ADD app.py /TensorRT/demo/Diffusion
-
-RUN ["ln", "-rs", "/TensorRT/demo/Diffusion/app.py", "app.py"]
+ADD app.py .
 
 RUN mkdir -p /deliberate-model/engine
 
@@ -31,14 +27,6 @@ ADD stable_diffusion_pipeline.py .
 ADD utilities.py .
 
 ADD models.py .
-
-RUN yes | /bin/mv txt2img_pipeline.py /TensorRT/demo/Diffusion
-
-RUN yes | /bin/mv stable_diffusion_pipeline.py /TensorRT/demo/Diffusion
-
-RUN yes | /bin/mv utilities.py /TensorRT/demo/Diffusion
-
-RUN yes | /bin/mv models.py /TensorRT/demo/Diffusion
 
 EXPOSE 8000
 
