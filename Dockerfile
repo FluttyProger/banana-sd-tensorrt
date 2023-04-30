@@ -32,13 +32,13 @@ ADD utilities.py .
 
 ADD models.py .
 
-RUN yes | /bin/cp -rf txt2img_pipeline.py /TensorRT/demo/Diffusion
+RUN yes | /bin/mv txt2img_pipeline.py /TensorRT/demo/Diffusion
 
-RUN yes | /bin/cp -rf stable_diffusion_pipeline.py /TensorRT/demo/Diffusion
+RUN yes | /bin/mv stable_diffusion_pipeline.py /TensorRT/demo/Diffusion
 
-RUN yes | /bin/cp -rf utilities.py /TensorRT/demo/Diffusion
+RUN yes | /bin/mv utilities.py /TensorRT/demo/Diffusion
 
-RUN yes | /bin/cp -rf models.py /TensorRT/demo/Diffusion
+RUN yes | /bin/mv models.py /TensorRT/demo/Diffusion
 
 EXPOSE 8000
 
