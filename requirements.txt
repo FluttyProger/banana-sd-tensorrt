@@ -1,4 +1,4 @@
-potassium
+sanic
 accelerate
 colored
 cuda-python
