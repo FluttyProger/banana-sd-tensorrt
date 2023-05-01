@@ -14,7 +14,6 @@ os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 def init():
     trt.init_libnvinfer_plugins(TRT_LOGGER, '')
     demo = Txt2ImgPipeline(
-        scheduler="dpm++",
         output_dir="",
         version="1.5",
         hf_token="",
@@ -52,7 +51,7 @@ def inference(model, model_inputs: dict) -> dict:
 
 
     # Load TensorRT engines and pytorch modules
-    model.loadResources(height, width, 1, seed, steps, guidance_scale)
+    model.loadResources(height, width, 1, seed, steps, guidance_scale, "DDIM")
 
 
     images = model.infer([prompt], negative_prompt=[negative], image_height=height, image_width=width, seed=seed)
@@ -64,4 +63,4 @@ def inference(model, model_inputs: dict) -> dict:
 
 
 if __name__ == "__main__":
-    app.serve()
+    app.serve(host="127.0.0.1")

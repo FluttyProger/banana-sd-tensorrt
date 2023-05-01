@@ -18,6 +18,8 @@
 
 from collections import OrderedDict
 from copy import copy
+from typing import Dict
+
 import numpy as np
 import onnx
 import onnx_graphsurgeon as gs
@@ -236,15 +238,17 @@ class Engine():
             self.tensors[binding] = tensor
             self.buffers[binding] = cuda.DeviceView(ptr=tensor.data_ptr(), shape=shape, dtype=dtype)
 
-    def infer(self, feed_dict, stream):
-        start_binding, end_binding = trt_util.get_active_profile_bindings(self.context)
+    def infer(self, feed_dict: Dict[str, cuda.DeviceView], stream: cuda.Stream):
+        start_binding, _ = trt_util.get_active_profile_bindings(self.context)
         # shallow copy of ordered dict
         device_buffers = copy(self.buffers)
         for name, buf in feed_dict.items():
             assert isinstance(buf, cuda.DeviceView)
             device_buffers[name] = buf
         bindings = [0] * start_binding + [buf.ptr for buf in device_buffers.values()]
-        noerror = self.context.execute_async_v2(bindings=bindings, stream_handle=stream.ptr)
+        noerror = self.context.execute_async_v2(
+            bindings=bindings, stream_handle=stream.ptr
+        )
         if not noerror:
             raise ValueError(f"ERROR: inference failed.")
 
@@ -361,7 +365,7 @@ class DDIMScheduler():
         clip_sample: bool = False,
         set_alpha_to_one: bool = False,
         steps_offset: int = 1,
-        prediction_type: str = "epsilon",
+        prediction_type: str = "epsilon"
     ):
         # this schedule is very specific to the latent diffusion model.
         betas = (

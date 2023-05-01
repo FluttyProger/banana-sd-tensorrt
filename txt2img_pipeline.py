@@ -43,7 +43,7 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
                 The scheduler to guide the denoising process. Must be one of the [DPM, LMSD, DDIM, EulerA, PNDM].
         """
         super(Txt2ImgPipeline, self).__init__(*args, **kwargs, \
-            scheduler=scheduler, stages=['clip','unet','vae'])
+            scheduler=scheduler, stages=['clip','unet'])
 
     def infer(
         self,
@@ -75,16 +75,9 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
                 Verbose in logging
         """
         assert len(prompt) == len(negative_prompt)
-
+        extra_step_kwargs = self.prepare_extra_step_kwargs(generator=self.generator, eta=0.0)
         with torch.inference_mode(), torch.autocast("cuda"), trt.Runtime(TRT_LOGGER):
             # Pre-initialize latents
-            latents = self.initialize_latents( \
-                batch_size=len(prompt), \
-                unet_channels=4, \
-                latent_height=(image_height // 8), \
-                latent_width=(image_width // 8)
-            )
-
             torch.cuda.synchronize()
             e2e_tic = time.perf_counter()
 
@@ -92,7 +85,26 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
             text_embeddings = self.encode_prompt(prompt, negative_prompt)
 
             # UNet denoiser
-            latents = self.denoise_latent(latents, text_embeddings)
+            # Pre-initialize latents
+            latents = self.initialize_latents(
+                batch_size=1,
+                unet_channels=4,
+                height=(image_height // 8),
+                width=(image_width // 8),
+                dtype=torch.float32,
+                device=torch.device("cuda"),
+                generator=self.generator,
+            )
+
+            torch.cuda.synchronize()
+
+            # UNet denoiser
+            latents = self.denoise_latent(
+                latents=latents,
+                text_embeddings=text_embeddings,
+                guidance_scale=self.guidance_scale,
+                extra_step_kwargs=extra_step_kwargs
+            )
 
             # VAE decode latent
             images = self.decode_latent(latents)
