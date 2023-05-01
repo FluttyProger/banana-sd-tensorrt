@@ -46,12 +46,13 @@ def inference(model, model_inputs: dict) -> dict:
     steps = model_inputs.get('steps', 36)
     guidance_scale = model_inputs.get('guidance_scale', 7)
     seed = model_inputs.get('seed', -1)
+    sampler = model_inputs.get('sampler', "DDIM")
 
     if not prompt: return {'message': 'No prompt was provided'}
 
 
     # Load TensorRT engines and pytorch modules
-    model.loadResources(height, width, 1, seed, steps, guidance_scale, "DDIM")
+    model.loadResources(height, width, 1, seed, steps, guidance_scale, sampler)
 
 
     images = model.infer([prompt], negative_prompt=[negative], image_height=height, image_width=width, seed=seed)

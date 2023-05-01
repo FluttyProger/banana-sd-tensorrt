@@ -18,6 +18,7 @@ import inspect
 from typing import List, Tuple, Union, Optional, Callable, Dict
 
 import diffusers
+from diffusers.configuration_utils import FrozenDict
 from tqdm import tqdm
 from cuda import cudart
 from PIL import Image
@@ -42,10 +43,10 @@ class StableDiffusionPipeline:
         self,
         version="1.5",
         inpaint=False,
-        stages=['clip','unet'],
+        stages=['clip', 'unet', 'vae'],
         max_batch_size=4,
         denoising_steps=50,
-        scheduler="dpm++",
+        scheduler="DPM",
         guidance_scale=7.5,
         device='cuda',
         output_dir='.',
@@ -85,16 +86,6 @@ class StableDiffusionPipeline:
                 Insert NVTX profiling markers.
         """
 
-        # Limit the workspace size for systems with GPU memory larger
-        # than 6 GiB to silence OOM warnings from TensorRT optimizer.
-#         _, free_mem, _ = cudart.cudaMemGetInfo()
-#         GiB = 2 ** 30
-#         if free_mem > 6*GiB:
-#             activation_carveout = 4*GiB
-#             self.max_workspace_size = free_mem - activation_carveout
-#         else:
-#             self.max_workspace_size = 0
-
         self.output_dir = output_dir
         self.hf_token = hf_token
         self.device = device
@@ -102,43 +93,6 @@ class StableDiffusionPipeline:
         self.nvtx_profile = nvtx_profile
         self.max_batch_size = max_batch_size
         self.version = version
-
-        # Schedule options
-        # sched_opts = {'num_train_timesteps': 1000, 'beta_start': 0.00085, 'beta_end': 0.012}
-        # if self.version in ("2.0", "2.1"):
-        #     sched_opts['prediction_type'] = 'v_prediction'
-        # else:
-        #     sched_opts['prediction_type'] = 'epsilon'
-        #
-        # if scheduler == "DDIM":
-        #     self.scheduler = DDIMScheduler(device=self.device, **sched_opts)
-        # elif scheduler == "DPM":
-        #     self.scheduler = DPMScheduler(device=self.device, **sched_opts)
-        # elif scheduler == "EulerA":
-        #     self.scheduler = EulerAncestralDiscreteScheduler(device=self.device, **sched_opts)
-        # elif scheduler == "LMSD":
-        #     self.scheduler = LMSDiscreteScheduler(device=self.device, **sched_opts)
-        # elif scheduler == "PNDM":
-        #     sched_opts["steps_offset"] = 1
-        #     self.scheduler = PNDMScheduler(device=self.device, **sched_opts)
-        # else:
-        #     raise ValueError(f"Scheduler should be either DDIM, DPM, EulerA, LMSD or PNDM")
-        #
-        # self.scheduler.configure()
-        # SCHEDULERS = {
-        #     "ddim": diffusers.DDIMScheduler,
-        #     "deis": diffusers.DEISMultistepScheduler,
-        #     "dpm2": diffusers.KDPM2DiscreteScheduler,
-        #     "dpm2-a": diffusers.KDPM2AncestralDiscreteScheduler,
-        #     "euler_a": diffusers.EulerAncestralDiscreteScheduler,
-        #     "euler": diffusers.EulerDiscreteScheduler,
-        #     "heun": diffusers.DPMSolverMultistepScheduler,
-        #     "dpm++": diffusers.DPMSolverMultistepScheduler,
-        #     "dpm": diffusers.DPMSolverMultistepScheduler,
-        #     "pndm": diffusers.PNDMScheduler,
-        # }
-        #
-        # self.scheduler = SCHEDULERS[scheduler].from_pretrained("/files", subfolder="scheduler")
 
         self.stages = stages
         self.inpaint = inpaint
@@ -153,30 +107,47 @@ class StableDiffusionPipeline:
         self.denoising_steps = denoising_step
         assert guidance_scal > 1.0
         self.guidance_scale = guidance_scal
-
         sched_opts = {'num_train_timesteps': 1000, 'beta_start': 0.00085, 'beta_end': 0.012}
+        SCHEDULERS = {
+            "ddim": diffusers.DDIMScheduler,
+            "deis": diffusers.DEISMultistepScheduler,
+            "dpm2": diffusers.KDPM2DiscreteScheduler,
+            "dpm2-a": diffusers.KDPM2AncestralDiscreteScheduler,
+            "euler_a": diffusers.EulerAncestralDiscreteScheduler,
+            "euler": diffusers.EulerDiscreteScheduler,
+            "heun": diffusers.DPMSolverMultistepScheduler,
+            "dpm++": diffusers.DPMSolverMultistepScheduler,
+            "dpm": diffusers.DPMSolverMultistepScheduler,
+            "pndm": diffusers.PNDMScheduler,
+        }
 
-        if scheduler == "DDIM":
-            self.scheduler = DDIMScheduler(device=self.device, **sched_opts)
-        elif scheduler == "DPM":
-            self.scheduler = DPMScheduler(device=self.device, **sched_opts)
-        elif scheduler == "EulerA":
-            self.scheduler = EulerAncestralDiscreteScheduler(device=self.device, **sched_opts)
-        elif scheduler == "LMSD":
-            self.scheduler = LMSDiscreteScheduler(device=self.device, **sched_opts)
-        elif scheduler == "PNDM":
-            sched_opts["steps_offset"] = 1
-            self.scheduler = PNDMScheduler(device=self.device, **sched_opts)
-        else:
-            raise ValueError(f"Scheduler should be either DDIM, DPM, EulerA, LMSD or PNDM")
+        conf = FrozenDict([('num_train_timesteps', 1000), ('beta_start', 0.00085), ('beta_end', 0.012)])
+
+        self.scheduler = SCHEDULERS[scheduler].from_config(conf)
+
+        # sched_opts = {'num_train_timesteps': 1000, 'beta_start': 0.00085, 'beta_end': 0.012}
+        #
+        # if scheduler == "DDIM":
+        #     self.scheduler = DDIMScheduler(device=self.device, **sched_opts)
+        # elif scheduler == "DPM":
+        #     self.scheduler = DPMScheduler(device=self.device, **sched_opts)
+        # elif scheduler == "EulerA":
+        #     self.scheduler = EulerAncestralDiscreteScheduler(device=self.device, **sched_opts)
+        # elif scheduler == "LMSD":
+        #     self.scheduler = LMSDiscreteScheduler(device=self.device, **sched_opts)
+        # elif scheduler == "PNDM":
+        #     sched_opts["steps_offset"] = 1
+        #     self.scheduler = PNDMScheduler(device=self.device, **sched_opts)
+        # else:
+        #     raise ValueError(f"Scheduler should be either DDIM, DPM, EulerA, LMSD or PNDM")
 
         # Initialize noise generator
         self.generator = torch.Generator(device="cuda").manual_seed(seed) if seed else None
 
         # Pre-compute latent input scales and linear multistep coefficients
-        self.scheduler.set_timesteps(self.denoising_steps)
+        self.scheduler.set_timesteps(self.denoising_steps, device=torch.device("cuda"))
 
-        self.scheduler.configure()
+        # self.scheduler.configure()
 
         # Create CUDA events and stream
         self.events = {}
@@ -277,10 +248,9 @@ class StableDiffusionPipeline:
 
         # Build TensorRT engines
         for model_name, obj in self.models.items():
-            if 'vae' not in model_name:
-                engine_path = self.getEnginePath(model_name, engine_dir)
-                engine = Engine(engine_path)
-                self.engine[model_name] = engine
+            engine_path = self.getEnginePath(model_name, engine_dir)
+            engine = Engine(engine_path)
+            self.engine[model_name] = engine
 
         # Load and activate TensorRT engines
         for model_name, obj in self.models.items():
@@ -407,19 +377,10 @@ class StableDiffusionPipeline:
         if not isinstance(timesteps, torch.Tensor):
             timesteps = self.scheduler.timesteps
         for step, timestep in enumerate(tqdm(timesteps)):
-            # Expand the latents if we are doing classifier free guidance
             latent_model_input = torch.cat([latents] * 2)
-            # latent_model_input = self.scheduler.scale_model_input(
-            #     latent_model_input, step_offset + step_index, timestep
-            # )
-            latent_model_input = self.scheduler.scale_model_input(
-                latent_model_input, timestep
-            )
-
+            latent_model_input = self.scheduler.scale_model_input(latent_model_input, timestep)
             if isinstance(mask, torch.Tensor):
-                latent_model_input = torch.cat(
-                    [latent_model_input, mask, masked_image_latents], dim=1
-                )
+                latent_model_input = torch.cat([latent_model_input, mask, masked_image_latents], dim=1)
 
             # Predict the noise residual
             timestep_float = (
@@ -447,9 +408,8 @@ class StableDiffusionPipeline:
                 model_output=noise_pred,
                 timestep=timestep,
                 sample=latents,
-                idx=step_offset + step,
                 **extra_step_kwargs,
-            )
+            ).prev_sample
 
         latents = 1.0 / 0.18215 * latents
         cudart.cudaEventRecord(self.events["denoise-stop"], 0)

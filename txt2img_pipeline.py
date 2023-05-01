@@ -42,8 +42,8 @@ class Txt2ImgPipeline(StableDiffusionPipeline):
             scheduler (str):
                 The scheduler to guide the denoising process. Must be one of the [DPM, LMSD, DDIM, EulerA, PNDM].
         """
-        super(Txt2ImgPipeline, self).__init__(*args, **kwargs, \
-            scheduler=scheduler, stages=['clip','unet'])
+        super(Txt2ImgPipeline, self).__init__(*args, **kwargs,
+            scheduler=scheduler, stages=['clip', 'unet'])
 
     def infer(
         self,
