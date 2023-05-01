@@ -64,4 +64,4 @@ def inference(model, model_inputs: dict) -> dict:
 
 
 if __name__ == "__main__":
-    app.serve(host="127.0.0.1")
+    app.serve()
