@@ -37,14 +37,14 @@ def handler(request):
         model_inputs = response.json.loads(request.json)
     except:
         model_inputs = request.json
-    prompt = model_inputs.get('prompt', None)
-    height = model_inputs.get('height', 768)
-    negative = model_inputs.get('negative_prompt', None)
-    width = model_inputs.get('width', 768)
+    prompt = model_inputs.get('prompt', "Pepe")
+    height = model_inputs.get('height', 512)
+    negative = model_inputs.get('negative_prompt', "(deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation")
+    width = model_inputs.get('width', 512)
     steps = model_inputs.get('steps', 36)
     guidance_scale = model_inputs.get('guidance_scale', 7)
     seed = model_inputs.get('seed', -1)
-    sampler = model_inputs.get('sampler', "DDIM")
+    sampler = model_inputs.get('sampler', "dpm++")
 
     if not prompt: return response.json({'message': 'No prompt was provided'})
 
